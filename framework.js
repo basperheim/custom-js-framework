@@ -39,6 +39,9 @@ function render(vElement) {
     throw new Error("Invalid virtual element:", vElement);
   }
 
+  // Debugging: Log the element being rendered
+  console.log("Rendering element:", vElement.type, "with props:", vElement.props);
+
   // Create the actual DOM element
   const dom = document.createElement(vElement.type);
 
@@ -51,6 +54,12 @@ function render(vElement) {
     } else if (key === "className") {
       // Handle className separately
       dom.setAttribute("class", value);
+    } else if (key === "style" && typeof value === "object") {
+      // Handle style object
+      Object.assign(dom.style, value);
+    } else if (key === "style" && typeof value === "string") {
+      // Handle style string
+      dom.setAttribute("style", value);
     } else {
       // Set other attributes
       dom.setAttribute(key, value);
@@ -126,7 +135,7 @@ function diffChildren(oldChildren, newChildren) {
   return patches;
 }
 
-// Inside patch function
+// Patching the Real DOM
 function patch(parent, patchObj, index = 0) {
   if (!patchObj) return;
 
@@ -163,25 +172,6 @@ function patch(parent, patchObj, index = 0) {
   }
 }
 
-// Attach an event listener and store the handler reference
-function attachEvent(dom, key, value) {
-  const eventType = key.substring(2).toLowerCase();
-  dom.addEventListener(eventType, value);
-
-  // Store the handler reference for future removal
-  if (!dom._eventListeners) dom._eventListeners = {};
-  dom._eventListeners[eventType] = value;
-}
-
-// Remove an event listener using the stored handler reference
-function removeEvent(dom, key) {
-  const eventType = key.substring(2).toLowerCase();
-  if (dom._eventListeners && dom._eventListeners[eventType]) {
-    dom.removeEventListener(eventType, dom._eventListeners[eventType]);
-    delete dom._eventListeners[eventType];
-  }
-}
-
 function patchProps(dom, props) {
   props.forEach(({ key, value }) => {
     if (value === undefined) {
@@ -200,6 +190,12 @@ function patchProps(dom, props) {
         attachEvent(dom, key, value);
       } else if (key === "className") {
         dom.setAttribute("class", value);
+      } else if (key === "style" && typeof value === "object") {
+        // Handle style object
+        Object.assign(dom.style, value);
+      } else if (key === "style" && typeof value === "string") {
+        // Handle style string
+        dom.setAttribute("style", value);
       } else {
         dom.setAttribute(key, value);
       }
@@ -211,6 +207,25 @@ function patchChildren(dom, childrenPatches) {
   childrenPatches.forEach((patchObj, index) => {
     patch(dom, patchObj, index);
   });
+}
+
+// Attach an event listener and store the handler reference
+function attachEvent(dom, key, value) {
+  const eventType = key.substring(2).toLowerCase();
+  dom.addEventListener(eventType, value);
+
+  // Store the handler reference for future removal
+  if (!dom._eventListeners) dom._eventListeners = {};
+  dom._eventListeners[eventType] = value;
+}
+
+// Remove an event listener using the stored handler reference
+function removeEvent(dom, key) {
+  const eventType = key.substring(2).toLowerCase();
+  if (dom._eventListeners && dom._eventListeners[eventType]) {
+    dom.removeEventListener(eventType, dom._eventListeners[eventType]);
+    delete dom._eventListeners[eventType];
+  }
 }
 
 // Simple Component System
